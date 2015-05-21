@@ -165,6 +165,7 @@ The following are all the release steps, you can disable any you need to:
         repo: 'geddski/grunt-release', //put your user/repo here
         usernameVar: 'GITHUB_USERNAME', //ENVIRONMENT VARIABLE that contains Github username
         passwordVar: 'GITHUB_PASSWORD' //ENVIRONMENT VARIABLE that contains Github password
+        releaseNotes: 'release_notes' //Folder containing release notes in .md format (v{version}.md) to be included in the release description
       }
     }
   }
