@@ -266,10 +266,10 @@ module.exports = function(grunt){
           body: releaseNotes
         })
         .end(function(res){
-          if (res.statusCode === 201){
-            success();
-          } else {
+          if (res && res.statusCode !== 201){
             deferred.reject('Error creating github release. Response: ' + res.text);
+          } else {
+            success();
           }
         });
 
