@@ -240,6 +240,40 @@ module.exports = function(grunt){
         deferred.resolve();
       }
 
+      function checkForGithubTag() {
+        var deferred = Q.defer(),
+            attempts = 0;
+
+        function doRequest() {
+          attempts++;
+
+          request
+            .get('https://api.github.com/repos/' + options.github.repo + '/tags')
+            .auth(process.env[options.github.usernameVar], process.env[options.github.passwordVar])
+            .set('User-Agent', 'grunt-release')
+            .end(function(err, res){
+              if (res && res.statusCode === 200){
+                for(var i = 0; i < res.body.length; i++) {
+                  if(res.body[i].name === config.newVersion){
+                    deferred.resolve();
+                    return;
+                  }
+                }
+              }
+
+              if(attempts > 3) {
+                deferred.reject();
+              } else {
+                doRequest();
+              }
+          });
+        }
+
+        doRequest();
+
+        return deferred.promise;
+      }
+
       if (nowrite){
         success();
         return;
@@ -249,23 +283,27 @@ module.exports = function(grunt){
         grunt.log.warn('Error: No username for GitHub release');
       }
 
-      request
-        .post('https://api.github.com/repos/' + options.github.repo + '/releases')
-        .auth(process.env[options.github.usernameVar], process.env[options.github.passwordVar])
-        .set('Accept', 'application/vnd.github.manifold-preview')
-        .set('User-Agent', 'grunt-release')
-        .send({
-          'tag_name': tagName,
-          name: tagMessage,
-          prerelease: type === 'prerelease'
-        })
-        .end(function(res){
-          if (res.statusCode === 201){
-            success();
-          } else {
-            deferred.reject('Error creating github release. Response: ' + res.text);
-          }
-        });
+      checkForGithubTag().then(function() {
+        request
+          .post('https://api.github.com/repos/' + options.github.repo + '/releases')
+          .auth(process.env[options.github.usernameVar], process.env[options.github.passwordVar])
+          .set('Accept', 'application/vnd.github.manifold-preview')
+          .set('User-Agent', 'grunt-release')
+          .send({
+            'tag_name': tagName,
+            name: tagMessage,
+            prerelease: type === 'prerelease'
+          })
+          .end(function(err, res){
+            if (res && res.statusCode === 201){
+              success();
+            } else {
+              deferred.reject('Error creating github release. Response: ' + res.text);
+            }
+          });
+      }).fail(function(){
+        deferred.reject('Error creating github release. Tag not found.');
+      });
 
       return deferred.promise;
     }
