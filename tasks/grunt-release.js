@@ -265,11 +265,11 @@ module.exports = function(grunt){
           prerelease: type === 'prerelease',
           body: releaseNotes
         })
-        .end(function(res){
-          if (res && res.statusCode !== 201){
-            deferred.reject('Error creating github release. Response: ' + res.text);
-          } else {
+        .end(function(err, res){
+          if (res && res.statusCode === 201){
             success();
+          } else {
+            deferred.reject('Error creating github release. Response: ' + res.text);
           }
         });
 
