@@ -234,11 +234,6 @@ module.exports = function(grunt){
 
     function githubRelease(){
       var deferred = Q.defer();
-      var releaseNotes;
-
-      if(options.github.releaseNotes) {
-        releaseNotes = grunt.file.read(options.github.releaseNotes + '/v' + config.newVersion + '.md');
-      }
 
       function success(){
         grunt.log.ok('created ' + tagName + ' release on github.');
@@ -262,8 +257,7 @@ module.exports = function(grunt){
         .send({
           'tag_name': tagName,
           name: tagMessage,
-          prerelease: type === 'prerelease',
-          body: releaseNotes
+          prerelease: type === 'prerelease'
         })
         .end(function(err, res){
           if (res && res.statusCode === 201){
