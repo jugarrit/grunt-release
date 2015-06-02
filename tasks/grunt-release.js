@@ -264,7 +264,8 @@ module.exports = function(grunt){
               if(attempts > 3) {
                 deferred.reject();
               } else {
-                doRequest();
+                grunt.log.writeln('Tag not found... Retrying.');
+                setTimeout(doRequest, 1000);
               }
           });
         }
