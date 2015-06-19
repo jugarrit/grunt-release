@@ -281,7 +281,7 @@ module.exports = function(grunt){
 
           request
             .get('https://api.github.com/repos/' + options.github.repo + '/tags')
-            .auth(process.env[options.github.usernameVar], process.env[options.github.passwordVar])
+            .auth(username, password)
             .set('User-Agent', 'grunt-release')
             .end(function(err, res){
               if (res && res.statusCode === 200){
