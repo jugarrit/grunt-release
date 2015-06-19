@@ -48,6 +48,10 @@ module.exports = function(grunt){
 
       options.additionalFiles.push(file);
 
+      if (typeof options.github !== 'undefined' && !options.github.apiRoot) {
+        options.github.apiRoot = 'https://api.github.com'; // Default Github.com api
+      }
+
       return {
         files: options.additionalFiles,
         vars: options.updateVars,
@@ -240,8 +244,31 @@ module.exports = function(grunt){
         releaseNotes = grunt.file.read(options.github.releaseNotes + '/v' + config.newVersion + '.md');
       }
 
-      function success(){
-        grunt.log.ok('created ' + tagName + ' release on github.');
+      var username;
+      var password;
+
+      if (!!options.github.usernameVar && !!options.github.passwordVar) {
+        username = process.env[options.github.usernameVar];
+        password = process.env[options.github.passwordVar];
+
+        if (!username) {
+          grunt.log.warn('Error: No username for GitHub release');
+        } else if (!password) {
+          grunt.log.warn('Error: No password for GitHub release');
+        }
+      } else if (!!options.github.accessTokenVar) {
+        username = process.env[options.github.accessTokenVar];
+        password = '';
+
+        if (!username) {
+          grunt.log.warn('Error: No access token for GitHub');
+        }
+      } else {
+        grunt.log.warn('Error: Please set GitHub Access Token or username and password');
+      }
+
+      function success () {
+        grunt.log.ok('created ' + tagName + ' release on GitHub.');
         deferred.resolve();
       }
 
@@ -280,26 +307,22 @@ module.exports = function(grunt){
         return deferred.promise;
       }
 
-      if (nowrite){
+      if (nowrite) {
         success();
         return;
-      }
-
-      if (!process.env[options.github.usernameVar]) {
-        grunt.log.warn('Error: No username for GitHub release');
       }
 
       checkForGithubTag().then(function() {
         request
           .post('https://api.github.com/repos/' + options.github.repo + '/releases')
-          .auth(process.env[options.github.usernameVar], process.env[options.github.passwordVar])
+          .auth(username, password)
           .set('Accept', 'application/vnd.github.manifold-preview')
           .set('User-Agent', 'grunt-release')
           .send({
             'tag_name': tagName,
             name: tagMessage,
             prerelease: type === 'prerelease',
-          	body: releaseNotes
+            body: releaseNotes
           })
           .end(function(err, res){
             if (res && res.statusCode === 201){
@@ -317,14 +340,21 @@ module.exports = function(grunt){
 
     function runTasks(taskName) {
       var tasks = options[taskName];
-      return Q.fcall(function () {
-        if (tasks.length) {
-          grunt.log.ok('running ' + taskName + ' ');
-          if (!nowrite) {
-            grunt.task.run(tasks);
+
+      var fn = function() {
+        return Q.fcall(function () {
+          if (tasks.length) {
+            grunt.log.ok('running ' + taskName + ' ');
+            if (!nowrite) {
+              for (var i = 0; i < tasks.length; i++) {
+                run('grunt ' + tasks[i], '-> ' + tasks[i]);
+              }
+            }
           }
-        }
-      });
+        });
+      };
+
+      return fn;
     }
 
     new Q()
