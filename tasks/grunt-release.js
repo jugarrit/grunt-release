@@ -190,11 +190,11 @@ module.exports = function(grunt){
     }
 
     function push(){
-      run('git push ' + options.remote + ' HEAD', 'pushed to remote');
+      return run('git push ' + options.remote + ' HEAD', 'pushed to remote');
     }
 
     function pushTags(){
-      run('git push ' + options.remote + ' ' + tagName, 'pushed new tag '+ config.newVersion +' to remote');
+      return run('git push ' + options.remote + ' ' + tagName, 'pushed new tag '+ config.newVersion +' to remote');
     }
 
     function publish(){
